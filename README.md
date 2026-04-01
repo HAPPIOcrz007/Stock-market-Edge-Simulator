@@ -135,7 +135,7 @@ struct Match {
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/Stock-market-Edge-Simulator.git
+   git clone https://github.com/HAPPIOcrz007/Stock-market-Edge-Simulator.git
    cd Stock-market-Edge-Simulator/Project_Stock_Simulation
    ```
 
