@@ -5,7 +5,7 @@
  * [Command.txt] ⟶ [batch_order_generator.cpp] ⟶ [order_maker.cpp]
  * ↑   ────────────────────────────────────────────────────────↵
  * ↑   ↳⟶ [orders0<stock_id>.bin] or [orders1<stock_id>.bin]
- * ↑   ↳⟶ [matchine_engine.cpp] ⟶ price_change
+ * ↑   ↳⟶ [machine_engine.cpp] ⟶ price_change
  * ↑                                       ↑
  * └──────── Human Readable ───────────────┘
 */
@@ -17,7 +17,7 @@
  *  ⬨
  *  {stock_id} --> to be moved
  *  {orders count} --> sum of bids/asks total
- *  {gradient} --> expected slove of price change +/- must be mentioned
+ *  {gradient} --> expected solve of price change +/- must be mentioned
 */
 
 /**
@@ -30,7 +30,7 @@
  * [orders0<stock_id>.bin] ⟹ the Sell order book based on <stock_id>
  * [orders1<stock_id>.bin] ⟹ the Buy order book based on <stock_id>
  * 
- * [matchine_engine.cpp] ⟹ does matchings and manages the orderbooks
+ * [machine_engine.cpp] ⟹ does matchings and manages the order-books
  *                              and send changes to <price_change>
  * 
  * price_change ⟹ the final output and feed of this whole system
@@ -185,12 +185,12 @@ namespace OrderConstants {
      * flags ⟹ 4 ⟹ SELL + IOC
      * flags ⟹ 5 ⟹ BUY  + IOC
      */
-    constexpr uint8_t FLAG_SELLGTC = 0x00;
-    constexpr uint8_t FLAG_BUYGTC  = 0x01;
-    constexpr uint8_t FLAG_SELLFOK = 0x02;
-    constexpr uint8_t FLAG_BUYFOK  = 0x03;
-    constexpr uint8_t FLAG_SELLIOC = 0x04;
-    constexpr uint8_t FLAG_BUYIOC  = 0x05; 
+    constexpr uint8_t FLAG_SELL_GTC = 0x00;
+    constexpr uint8_t FLAG_BUY_GTC  = 0x01;
+    constexpr uint8_t FLAG_SELL_FOK = 0x02;
+    constexpr uint8_t FLAG_BUY_FOK  = 0x03;
+    constexpr uint8_t FLAG_SELL_IOC = 0x04;
+    constexpr uint8_t FLAG_BUY_IOC  = 0x05; 
 }
 
 #define STATIC_ASSERT(cnd, msg) static_assert(cnd, msg)
