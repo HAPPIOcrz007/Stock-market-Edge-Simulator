@@ -332,3 +332,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ```
 
 This README is now properly tailored for your C++ project, removing all Rust references and focusing on the actual architecture with `.cpp` and `.h` files. It includes all the structures from your `core_structure.h` and explains the batch order maker functionality accurately.
+```
+
+## TODO
+- [ ] making main orderbook (small book on ram)
+- [ ] cyclic input matching engine
