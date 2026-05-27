@@ -1,9 +1,9 @@
 # Stock Market Edge Simulator
-A high-performance C++ order book simulation system for stock market behavior analysis and market microstructure research. This simulator generates realistic order flows, processes them through a matching engine, and analyzes market movements under various conditions.
+A high-performance C++ order book simulation system for stock market behavior analysis and market micro-structure research. This simulator generates realistic order flows, processes them through a matching engine, and analyzes market movements under various conditions.
 
 ## 📋 Overview
 
-The Stock Market Edge Simulator is a C++-based trading system simulation that models order book dynamics, order matching, and price formation. It's designed to help understand market behavior, test trading strategies, and analyze market microstructure effects under different scenarios.
+The Stock Market Edge Simulator is a C++-based trading system simulation that models order book dynamics, order matching, and price formation. It's designed to help understand market behavior, test trading strategies, and analyze market micro-structure effects under different scenarios.
 
 ### Key Features
 
