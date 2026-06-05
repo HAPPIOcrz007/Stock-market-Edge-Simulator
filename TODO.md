@@ -1,8 +1,12 @@
 # Requirements
 - [ ] Multiple Ticker
       multiple stocks/ etf / securities accessible and tradable
-- [ ] Persistent Order ID
+- [X] Persistent Order ID
       order Id's for tracking and audit
+    - [ ] Enum for stages
+    - [ ] Partial fill handling
+    - [ ] Namespace Versioning
+    - [ ] Benchmark different struct styles
 - [ ] More types of Orders
       IOC, Limit, Market, Auction Orders
 - [ ] Cancel Or Modify Order

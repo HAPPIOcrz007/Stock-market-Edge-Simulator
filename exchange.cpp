@@ -2,24 +2,41 @@
 #include <queue>
 #include <string>
 #include <vector>
+#include <atomic>
+#include <chrono>
+
+uint64_t generate_id(const std::string& ticker);
+
+struct Order {
+    int stage;
+    uint64_t orderId;
+    double price = 0.0;
+    int quantity = 0;
+
+    Order(const std::string& ticker, int stg, double prc, int qty)
+        :stage(stg),
+        orderId(generate_id(ticker)),
+        price(prc),
+        quantity(qty) {}
+};
 
 struct asc {
-    bool operator()(const std::pair<double,int>& a, const std::pair<double,int>& b) const {
-        return a.first > b.first; // smallest price on top
+    bool operator()(const Order& a, Order& b) const {
+        return a.price > b.price; // smallest price on top
     }
 };
 
 struct desc {
-    bool operator()(const std::pair<double,int>& a, const std::pair<double,int>& b) const {
-        return a.first < b.first; // largest price on top
+    bool operator()(const Order& a, const Order& b) const {
+        return a.price < b.price; // largest price on top
     }
 };
 
 int exchange(std::string, double, int);
 double matching(
     std::string,
-    std::priority_queue<std::pair<double,int>, std::vector<std::pair<double,int>>, desc>& bidding_heap,
-    std::priority_queue<std::pair<double,int>, std::vector<std::pair<double,int>>, asc>& asking_heap,
+    std::priority_queue<Order, std::vector<Order>, desc>& bidding_heap,
+    std::priority_queue<Order, std::vector<Order>, asc>& asking_heap,
     double trading_price
 );
 
@@ -39,8 +56,8 @@ int main()
 int exchange(std::string Ticker, double Base_price, int State)
 {
     std::cout << "\n\nWelcome To the exchange\n";
-    std::priority_queue<std::pair<double,int>, std::vector<std::pair<double,int>>, asc> asking_heap;
-    std::priority_queue<std::pair<double,int>, std::vector<std::pair<double,int>>, desc> bidding_heap;
+    std::priority_queue<Order, std::vector<Order>, asc> asking_heap;
+    std::priority_queue<Order, std::vector<Order>, desc> bidding_heap;
 
     while (State == 1)
     {
@@ -59,20 +76,20 @@ int exchange(std::string Ticker, double Base_price, int State)
                 double price, quantity;
                 std::cout << "Enter Bid Price and Quantity: ";
                 std::cin >> price >> quantity;
-                if (quantity > 0) bidding_heap.push({price, (int)quantity});
+                if (quantity > 0) bidding_heap.push({Ticker, 1, price, quantity});
                 else std::cout << "\nFAILED\n Quantity must not be 0\n";
             }
             else if (chc == 2) {
                 double price, quantity;
                 std::cout << "Enter Ask Price and Quantity: ";
                 std::cin >> price >> quantity;
-                if (quantity > 0) asking_heap.push({price, (int)quantity});
+                if (quantity > 0) asking_heap.push({Ticker, 1, price, quantity});
                 else std::cout << "\nFAILED\n Quantity must not be 0\n";
             }
             else if (chc == 3) {
                 Base_price = matching(Ticker, bidding_heap, asking_heap, Base_price);
-                if(!bidding_heap.empty()) std::cout<< "Best Bid :: " << bidding_heap.top().first << "\n";
-                if(!asking_heap.empty()) std::cout<< "Best Ask :: " << asking_heap.top().first << "\n";
+                if(!bidding_heap.empty()) std::cout<< "Best Bid :: " << bidding_heap.top().price << "\n";
+                if(!asking_heap.empty()) std::cout<< "Best Ask :: " << asking_heap.top().price << "\n";
                 std::cout << "Price of Ticker ::" << Ticker << " is :: " << Base_price << "\n";
             }
         }
@@ -86,32 +103,44 @@ int exchange(std::string Ticker, double Base_price, int State)
 
 double matching(
     std::string Ticker,
-    std::priority_queue<std::pair<double,int>, std::vector<std::pair<double,int>>, desc>& bidding_heap,
-    std::priority_queue<std::pair<double,int>, std::vector<std::pair<double,int>>, asc>& asking_heap,
+    std::priority_queue<Order, std::vector<Order>, desc>& bidding_heap,
+    std::priority_queue<Order, std::vector<Order>, asc>& asking_heap,
     double trading_price
 ){
     double temp_trading_price = trading_price;
-    while(!bidding_heap.empty() && !asking_heap.empty() && bidding_heap.top().first >= asking_heap.top().first){
+    while(!bidding_heap.empty() && !asking_heap.empty() && bidding_heap.top().price >= asking_heap.top().price){
         auto best_bid = bidding_heap.top();
         auto best_ask = asking_heap.top();
+        best_bid.stage = 2;
+        best_ask.stage = 2;
 
-        int tradeQty = std::min(best_bid.second, best_ask.second);
-        temp_trading_price = best_ask.first; // trade at ask price
+        int tradeQty = std::min(best_bid.quantity, best_ask.quantity);
+        temp_trading_price = best_ask.price; // trade at ask price
 
         std::cout<<"\n--- Trade Executed ---";
-        std::cout<<"\nBID Price :: " << best_bid.first << " | BID Quantity :: " << best_bid.second;
-        std::cout<<"\nASK Price :: " << best_ask.first << " | ASK Quantity :: " << best_ask.second;
+        std::cout<<"\nBID Price :: " << best_bid.price << " | BID Quantity :: " << best_bid.quantity << " | ID :: " << best_bid.orderId;
+        std::cout<<"\nASK Price :: " << best_ask.price << " | ASK Quantity :: " << best_ask.quantity << " | ID :: " << best_ask.orderId;;
         std::cout<<"\nTraded Quantity :: " << tradeQty << " @ Price :: " << temp_trading_price;
         std::cout<<"\n----------------------\n";
 
-        best_bid.second -= tradeQty;
-        best_ask.second -= tradeQty;
+        best_bid.quantity -= tradeQty;
+        best_ask.quantity -= tradeQty;
 
-        bidding_heap.pop();
-        asking_heap.pop();
+        best_bid.stage = 3;
+        best_ask.stage = 3;
 
-        if(best_bid.second > 0) bidding_heap.push(best_bid);
-        if(best_ask.second > 0) asking_heap.push(best_ask);
+        if(best_bid.quantity < 0) bidding_heap.pop();
+        if(best_ask.quantity < 0) asking_heap.pop();
     }
     return temp_trading_price;
+}
+
+const uint16_t DEFAULT_ENGINE_ID = 1;
+
+uint64_t generate_id(const std::string& ticker){
+    uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()
+    ).count();
+
+    return (timestamp << 16)|DEFAULT_ENGINE_ID;
 }
