@@ -108,6 +108,12 @@ double matching(
     double trading_price
 ){
     double temp_trading_price = trading_price;
+    while(!bidding_heap.empty() && bidding_heap.top().stage == 5){
+        bidding_heap.pop();
+    }
+    while(!asking_heap.empty() && asking_heap.top().stage == 5){
+        asking_heap.pop();
+    }
     while(!bidding_heap.empty() && !asking_heap.empty() && bidding_heap.top().price >= asking_heap.top().price){
         auto best_bid = bidding_heap.top();
         auto best_ask = asking_heap.top();
@@ -126,11 +132,24 @@ double matching(
         best_bid.quantity -= tradeQty;
         best_ask.quantity -= tradeQty;
 
-        best_bid.stage = 3;
-        best_ask.stage = 3;
+        bidding_heap.pop();
+        asking_heap.pop();
 
-        if(best_bid.quantity < 0) bidding_heap.pop();
-        if(best_ask.quantity < 0) asking_heap.pop();
+        if(best_bid.quantity > 0){
+            best_bid.stage = 1;
+            bidding_heap.push(best_bid);
+        }
+        else{
+            best_bid.stage = 3;
+        }
+
+        if(best_ask.quantity > 0){
+            best_ask.stage = 1;
+            asking_heap.push(best_ask);
+        }
+        else{
+            best_ask.stage = 3;
+        }
     }
     return temp_trading_price;
 }
