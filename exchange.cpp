@@ -7,6 +7,10 @@
 
 uint64_t generate_id(const std::string& ticker);
 
+// TODO Enum for Stages
+// TODO Partial Fill Handling
+// TODO Cancel - Modify support
+
 struct Order {
     int stage;
     uint64_t orderId;
