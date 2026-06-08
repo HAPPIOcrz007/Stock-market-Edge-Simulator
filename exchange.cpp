@@ -7,17 +7,27 @@
 
 uint64_t generate_id(const std::string& ticker);
 
-// TODO Enum for Stages
-// TODO Partial Fill Handling
-// TODO Cancel - Modify support
+// DONE - todo-planning - Enum for Stages
+// TODO - todo-planning - Partial Fill Handling
+// TODO - todo-planning - Cancel - Modify support
+
+// TODO - todo-audit - Audit trail logging
+
+enum class Stage{
+    Added,
+    Matching,
+    Filled,
+    Modified,
+    Cancelled
+};
 
 struct Order {
-    int stage;
+    Stage stage;
     uint64_t orderId;
     double price = 0.0;
     int quantity = 0;
 
-    Order(const std::string& ticker, int stg, double prc, int qty)
+    Order(const std::string& ticker, Stage stg, double prc, int qty)
         :stage(stg),
         orderId(generate_id(ticker)),
         price(prc),
@@ -80,14 +90,14 @@ int exchange(std::string Ticker, double Base_price, int State)
                 double price, quantity;
                 std::cout << "Enter Bid Price and Quantity: ";
                 std::cin >> price >> quantity;
-                if (quantity > 0) bidding_heap.push({Ticker, 1, price, quantity});
+                if (quantity > 0) bidding_heap.push({Ticker, Stage::Added, price, quantity});
                 else std::cout << "\nFAILED\n Quantity must not be 0\n";
             }
             else if (chc == 2) {
                 double price, quantity;
                 std::cout << "Enter Ask Price and Quantity: ";
                 std::cin >> price >> quantity;
-                if (quantity > 0) asking_heap.push({Ticker, 1, price, quantity});
+                if (quantity > 0) asking_heap.push({Ticker, Stage::Added, price, quantity});
                 else std::cout << "\nFAILED\n Quantity must not be 0\n";
             }
             else if (chc == 3) {
@@ -112,17 +122,17 @@ double matching(
     double trading_price
 ){
     double temp_trading_price = trading_price;
-    while(!bidding_heap.empty() && bidding_heap.top().stage == 5){
+    while(!bidding_heap.empty() && bidding_heap.top().stage == Stage::Cancelled){
         bidding_heap.pop();
     }
-    while(!asking_heap.empty() && asking_heap.top().stage == 5){
+    while(!asking_heap.empty() && asking_heap.top().stage == Stage::Cancelled){
         asking_heap.pop();
     }
     while(!bidding_heap.empty() && !asking_heap.empty() && bidding_heap.top().price >= asking_heap.top().price){
         auto best_bid = bidding_heap.top();
         auto best_ask = asking_heap.top();
-        best_bid.stage = 2;
-        best_ask.stage = 2;
+        best_bid.stage = Stage::Matching;
+        best_ask.stage = Stage::Matching;
 
         int tradeQty = std::min(best_bid.quantity, best_ask.quantity);
         temp_trading_price = best_ask.price; // trade at ask price
@@ -140,19 +150,19 @@ double matching(
         asking_heap.pop();
 
         if(best_bid.quantity > 0){
-            best_bid.stage = 1;
+            best_bid.stage = Stage::Added;
             bidding_heap.push(best_bid);
         }
         else{
-            best_bid.stage = 3;
+            best_bid.stage = Stage::Filled;
         }
 
         if(best_ask.quantity > 0){
-            best_ask.stage = 1;
+            best_ask.stage = Stage::Added;
             asking_heap.push(best_ask);
         }
         else{
-            best_ask.stage = 3;
+            best_ask.stage = Stage::Filled;
         }
     }
     return temp_trading_price;
