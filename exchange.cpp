@@ -12,7 +12,6 @@ uint64_t generate_id(const std::string &ticker);
 // DONE - todo-planning - Enum for Stages
 // TODO - todo-planning - Partial Fill Handling
 // TODO - todo-planning - Cancel - Modify support
-
 // TODO - todo-audit - Audit trail logging
 
 enum class Stage
