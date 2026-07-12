@@ -58,3 +58,9 @@ enum class Stage
 struct Order
 {
 };
+
+uint64_t generate_order_ID(){
+    uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+    
+}
