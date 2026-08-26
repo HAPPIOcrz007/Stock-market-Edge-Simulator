@@ -1,188 +1,70 @@
 #include <iostream>
-#include <queue>
-#include <string>
-#include <vector>
-#include <map>
-#include <list>
-#include <atomic>
 #include <chrono>
+#include <optional>
 
-uint64_t generate_id(const std::string &ticker);
+uint64_t generate_order_ID(const std::string &ticker);
 
-// DONE - todo-planning - Enum for Stages
-// TODO - todo-planning - Partial Fill Handling
-// TODO - todo-planning - Cancel - Modify support
-// TODO - todo-audit - Audit trail logging
-
+// ? - why enum class
+/* ANS -
+    enum - it is better in understanding than
+    integers to the reader*/
+// ? but ... why enum class
+/* ANS -
+    enums hold integer value at the back so classing
+    reduces that leak into the global scope
+    protecting and reducing errors
+    classed enums cannot be implicitly converted
+    to int
+*/
 enum class Stage
 {
-    Added,
-    Matching,
+    New,
+    Partially_filled,
     Filled,
-    Modified,
-    Cancelled
+    Cancelled,
+    Replaced
+    // ? what do real systems use
+    /* ANS -
+        The core values are:
+        New, Partially Filled, Filled, Cancelled, Replaced,
+        Pending Cancel, Pending New, Pending Replace,
+        Rejected, Expired, Suspended, Done for Day
+    */
+    // ? why not using the pending** cases
+    /* ANS -
+        I looked at FIX OrdStatus,
+        took the subset that applies to a synchronous
+        single-threaded engine, and left the Pending states
+        as a known gap that matters once I go async
+    */
+    // ? not using stage - replaced here
+    /* ANS -
+         many systems allow replacing of order specifications like
+         price and volume
+         so when a change is made in most systems, mainly price change
+         the system cancels the current order and gives a new orderId making
+         a new order at the timestamp of when the replacement is accepted by the
+         system, this is also same in volume increase as its like a boost someone
+         would get increaseing the position at the last timestamp
+         but if a entity is shrinking its volume we can allow them to keep the
+         same Id and the last timestamp as it wont impact others
+         (According to process of CME Group)
+         changing sides gives different orderID too at new timestamp
+
+         so we keep replaced_orderId tag blank for all orders and if they are
+         a continuation of another order we put the last order's id there
+    */
 };
+
+enum class Side { Buy, Sell };
 
 struct Order
 {
-    Stage stage;
-    uint64_t orderId;
-    int ticks = 0.0;
-    int quantity = 0;
-
-    Order(const std::string &ticker, Stage stg, int prc, int qty)
-        : stage(stg),
-          orderId(generate_id(ticker)),
-          ticks(prc),
-          quantity(qty) {}
+    uint64_t id;
+    std::optional <uint64_t>
 };
 
-int exchange(std::string, double, int);
-double matching(
-    std::string,
-    std::map<Order.ticks
-    double trading_price);
-
-int main()
-{
-    std::cout << "Welcome To the interface\n";
-    std::string Ticker;
-    std::cout << "\nTicker :: ";
-    std::cin >> Ticker;
-    double Base_price = 0.0;
-    std::cout << "\nBase Price :: ";
-    std::cin >> Base_price;
-
-    return exchange(Ticker, Base_price, 1); // start state at 1 so loop runs
-}
-
-int exchange(std::string Ticker, double Base_price, int State)
-{
-    std::cout << "\n\nWelcome To the exchange\n";
-    std::priority_queue<Order, std::vector<Order>, asc> asking_heap;
-    std::priority_queue<Order, std::vector<Order>, desc> bidding_heap;
-
-    while (State == 1)
-    {
-        std::cout << "\n1. Bid \n2. Ask \n3. Check Price \n4. EXIT \n\n";
-        std::string choice;
-        std::cin >> choice;
-        if (isdigit(choice[0]))
-        {
-            int chc = choice[0] - '0'; // FIXED conversion
-            if (chc == 4)
-            {
-                State = 2;
-                std::cout << "Exiting...\n";
-                return 0;
-            }
-            else if (chc == 1)
-            {
-                double price, quantity;
-                std::cout << "Enter Bid Price and Quantity: ";
-                std::cin >> price >> quantity;
-                if (quantity > 0)
-                    bidding_heap.push({Ticker, Stage::Added, price, quantity});
-                else
-                    std::cout << "\nFAILED\n Quantity must not be 0\n";
-            }
-            else if (chc == 2)
-            {
-                double price, quantity;
-                std::cout << "Enter Ask Price and Quantity: ";
-                std::cin >> price >> quantity;
-                if (quantity > 0)
-                    asking_heap.push({Ticker, Stage::Added, price, quantity});
-                else
-                    std::cout << "\nFAILED\n Quantity must not be 0\n";
-            }
-            else if (chc == 3)
-            {
-                Base_price = matching(Ticker, bidding_heap, asking_heap, Base_price);
-                if (!bidding_heap.empty())
-                    std::cout << "Best Bid :: " << bidding_heap.top().price << "\n";
-                if (!asking_heap.empty())
-                    std::cout << "Best Ask :: " << asking_heap.top().price << "\n";
-                std::cout << "Price of Ticker ::" << Ticker << " is :: " << Base_price << "\n";
-            }
-        }
-        else
-        {
-            State = 2;
-            return 1;
-        }
-    }
-    return 0;
-}
-
-double matching(
-    std::string Ticker,
-    std::priority_queue<Order, std::vector<Order>, desc> &bidding_heap,
-    std::priority_queue<Order, std::vector<Order>, asc> &asking_heap,
-    double trading_price)
-{
-    double temp_trading_price = trading_price;
-    while (!bidding_heap.empty() && bidding_heap.top().stage == Stage::Cancelled)
-    {
-        bidding_heap.pop();
-    }
-    while (!asking_heap.empty() && asking_heap.top().stage == Stage::Cancelled)
-    {
-        asking_heap.pop();
-    }
-    while (!bidding_heap.empty() && !asking_heap.empty() && bidding_heap.top().price >= asking_heap.top().price)
-    {
-        auto best_bid = bidding_heap.top();
-        auto best_ask = asking_heap.top();
-        best_bid.stage = Stage::Matching;
-        best_ask.stage = Stage::Matching;
-
-        int tradeQty = std::min(best_bid.quantity, best_ask.quantity);
-        temp_trading_price = best_ask.price; // trade at ask price
-
-        std::cout << "\n--- Trade Executed ---";
-        std::cout << "\nBID Price :: " << best_bid.price << " | BID Quantity :: " << best_bid.quantity << " | ID :: " << best_bid.orderId;
-        std::cout << "\nASK Price :: " << best_ask.price << " | ASK Quantity :: " << best_ask.quantity << " | ID :: " << best_ask.orderId;
-        ;
-        std::cout << "\nTraded Quantity :: " << tradeQty << " @ Price :: " << temp_trading_price;
-        std::cout << "\n----------------------\n";
-
-        best_bid.quantity -= tradeQty;
-        best_ask.quantity -= tradeQty;
-
-        bidding_heap.pop();
-        asking_heap.pop();
-
-        if (best_bid.quantity > 0)
-        {
-            best_bid.stage = Stage::Added;
-            bidding_heap.push(best_bid);
-        }
-        else
-        {
-            best_bid.stage = Stage::Filled;
-        }
-
-        if (best_ask.quantity > 0)
-        {
-            best_ask.stage = Stage::Added;
-            asking_heap.push(best_ask);
-        }
-        else
-        {
-            best_ask.stage = Stage::Filled;
-        }
-    }
-    return temp_trading_price;
-}
-
-const uint16_t DEFAULT_ENGINE_ID = 1;
-
-uint64_t generate_id(const std::string &ticker)
-{
+uint64_t generate_order_ID(){
     uint64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-                             std::chrono::system_clock::now().time_since_epoch())
-                             .count();
-
-    return (timestamp << 16) | DEFAULT_ENGINE_ID;
+        std::chrono::system_clock::now().time_since_epoch()).count();    
 }
