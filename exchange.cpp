@@ -60,8 +60,7 @@ enum class Side { Buy, Sell };
 
 struct Order
 {
-    uint64_t id;
-    std::optional <uint64_t>
+    
 };
 
 uint64_t generate_order_ID(){
